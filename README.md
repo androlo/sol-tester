@@ -29,6 +29,10 @@ Tested with Go (1.6) on:
 
 `go test ./...`
 
+### Usage
+
+-
+
 ### Tools
 
 #### Builder
@@ -38,5 +42,3 @@ The builder is used to compile Solidity-contracts. It features a simple build-fi
 #### Linker
 
 The linker is used to deploy and link Solidity libraries, and can be called on to link the bytecode of a contract before deploying it. It will automatically find libraries that are referenced in the bytecode and deploy them, as well as any libraries they depend on.
-
-When linking, the entire list of libraries has to be provided
