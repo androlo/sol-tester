@@ -1,0 +1,65 @@
+[
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "a",
+        "type": "uint256"
+      },
+      {
+        "name": "b",
+        "type": "uint256"
+      }
+    ],
+    "name": "addD",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "a",
+        "type": "uint256"
+      },
+      {
+        "name": "b",
+        "type": "uint256"
+      }
+    ],
+    "name": "add",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "a",
+        "type": "uint256"
+      },
+      {
+        "name": "b",
+        "type": "uint256"
+      }
+    ],
+    "name": "sub",
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "type": "function"
+  }
+]

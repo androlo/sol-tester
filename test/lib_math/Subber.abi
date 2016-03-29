@@ -1,0 +1,23 @@
+[
+  {
+    "constant": true,
+    "inputs": [
+      {
+        "name": "a",
+        "type": "uint256"
+      },
+      {
+        "name": "b",
+        "type": "uint256"
+      }
+    ],
+    "name": "sub",
+    "outputs": [
+      {
+        "name": "sum",
+        "type": "uint256"
+      }
+    ],
+    "type": "function"
+  }
+]

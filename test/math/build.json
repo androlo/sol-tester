@@ -1,0 +1,10 @@
+{
+  "module": "math",
+  "units": [
+    ["Adder"]
+  ],
+  "compilerOptions": {
+    "bin": true,
+    "abi": true
+  }
+}
