@@ -6,7 +6,13 @@ This library consists of a number of utilities for testing Solidity contracts. I
 
 ### Installing and usage
 
+No dependency management set up. Will add that before real release.
+
+### Prerequisites
+
 Need to have Go installed.
+
+Need go-ethereum on latest develop
 
 You must have `solc` on your path for the builder to work.
 
@@ -14,7 +20,10 @@ You must have `solc` on your path for the builder to work.
 
 `go get -u -t github.com/androlo/sol-tester`
 
-Tested on `Ubuntu server 14.04, 64 bit`, `Windows 10, 64 bit`.
+Tested with Go (1.6) on:
+
+- `Ubuntu server 14.04, 64 bit`
+- `Windows 10, 64 bit`.
 
 #### Testing
 
