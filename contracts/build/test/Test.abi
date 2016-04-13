@@ -1,0 +1,1 @@
+[{"anonymous":false,"inputs":[{"indexed":true,"name":"result","type":"bool"},{"indexed":false,"name":"message","type":"string"}],"name":"TestEvent","type":"event"}]

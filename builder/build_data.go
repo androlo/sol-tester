@@ -7,19 +7,21 @@ import (
 
 // Struct representation of a build.json file.
 type BuildData struct {
-	Module          string            `json:module`
-	Units           [][]string        `json:contracts`
-	CompilerOptions *CompilerOptions  `json:options`
-	Includes        map[string]string `json:includes`
+	Module          string            `json:"module"`
+	Units           [][]string        `json:"units"`
+	Tests           []string          `json:"tests"`
+	CompilerOptions *CompilerOptions  `json:"compilerOptions"`
+	Includes        map[string]string `json:"includes"`
 }
 
 type CompilerOptions struct {
-	SourcePath   string `json:sourcePath`
-	OutputPath   string `json:outputPath`
-	Bin          bool   `json:bin`
-	Abi          bool   `json:abi`
-	Optimize     bool   `json:optimize`
-	OptimizeRuns uint32 `json:optimizeRuns`
+	SourcePath     string `json:"sourcePath"`
+	OutputPath     string `json:"outputPath"`
+	TestOutputPath string `json:"testOutputPath"`
+	Bin            bool   `json:"bin"`
+	Abi            bool   `json:"abi"`
+	Optimize       bool   `json:"optimize"`
+	OptimizeRuns   uint32 `json:"optimizeRuns"`
 }
 
 func LoadBuildData(path string) (*BuildData, error) {

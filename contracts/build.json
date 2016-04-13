@@ -1,0 +1,13 @@
+{
+  "module": "signers",
+  "tests": [
+    "TestUtilStringsTest",
+    "TestUtilToASCIITest",
+    "TestUtilTagsTest"
+  ],
+  "compilerOptions": {
+    "bin": true,
+    "abi": true,
+    "optimize": true
+  }
+}

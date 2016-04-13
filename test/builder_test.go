@@ -15,7 +15,7 @@ func TestBuildFailNoModuleName(t *testing.T) {
 	assert.Error(t, bErr)
 }
 
-func TestBuildFailNoUnits(t *testing.T) {
+func TestBuildFailNoUnitsOrTests(t *testing.T) {
 	moduleDir := path.Join(cwd, "no_units")
 	bd := builder.NewBuilder()
 	bErr := bd.Build(moduleDir, "")

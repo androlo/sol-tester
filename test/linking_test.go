@@ -1,17 +1,12 @@
 package test
 
 import (
-    "github.com/androlo/sol-tester/linker"
-    "github.com/stretchr/testify/assert"
-    "path"
-    "testing"
-    "github.com/androlo/sol-tester/util"
-    "strings"
-    //"github.com/ethereum/go-ethereum/accounts/abi"
-    //"github.com/ethereum/go-ethereum/common"
-    //"github.com/ethereum/go-ethereum/accounts/abi/bind"
-    "math/big"
-    //"fmt"
+	"encoding/hex"
+	"github.com/androlo/sol-tester/util"
+	"github.com/stretchr/testify/assert"
+	"path"
+	"strings"
+	"testing"
 )
 
 const AdderAbi = `[{"constant":true,"inputs":[{"name":"a","type":"uint256"},{"name":"b","type":"uint256"}],"name":"add","outputs":[{"name":"sum","type":"uint256"}],"type":"function"}]`
@@ -29,120 +24,101 @@ const SubberTag = "__Subber________________________________"
 const AdderDelegatorTag = "__AdderDelegator________________________"
 
 func TestLinkNoLibs(t *testing.T) {
-    moduleDir := path.Join(cwd, "lib_math")
-    lk := linker.NewLinker(moduleDir)
-    bytecode, lErr := lk.Link(NoLibs)
+	moduleDir := path.Join(cwd, "lib_math")
+	lk := newLinker(moduleDir)
+	bytecode, lErr := lk.Link(NoLibs)
 
-    assert.NoError(t, lErr)
-    assert.Equal(t, bytecode, NoLibs)
+	assert.NoError(t, lErr)
+	assert.Equal(t, bytecode, NoLibs)
 }
 
 func TestDeployLibraryNoLinking(t *testing.T) {
-    moduleDir := path.Join(cwd, "lib_math")
+	moduleDir := path.Join(cwd, "lib_math")
 
-    lk := linker.NewLinker(moduleDir)
-    dErr := lk.DeployLibrary("Adder")
+	lk := newLinker(moduleDir)
+	dErr := lk.DeployLibrary("Adder")
 
-    assert.NoError(t, dErr)
-    lib := lk.Libraries()["Adder"]
-    assert.True(t, util.AddressRe.MatchString(lib.Address))
-    assert.Equal(t, lib.Bytecode, AdderBin)
-    assert.Equal(t, lib.Abi, AdderAbi)
+	assert.NoError(t, dErr)
+	lib := lk.Libraries()["Adder"]
+	assert.True(t, util.AddressRe.MatchString(lib.Address.Hex()[2:]))
 }
 
 func TestDeployLibraryLinking(t *testing.T) {
-    moduleDir := path.Join(cwd, "lib_math")
+	moduleDir := path.Join(cwd, "lib_math")
 
-    lk := linker.NewLinker(moduleDir)
-    dErr := lk.DeployLibrary("AdderDelegator")
+	lk := newLinker(moduleDir)
+	dErr := lk.DeployLibrary("AdderDelegator")
 
-    assert.NoError(t, dErr)
-    lib := lk.Libraries()["AdderDelegator"]
-    assert.True(t, util.AddressRe.MatchString(lib.Address))
-    lib = lk.Libraries()["Adder"]
-    assert.True(t, util.AddressRe.MatchString(lib.Address))
+	assert.NoError(t, dErr)
+	lib := lk.Libraries()["AdderDelegator"]
+	assert.True(t, util.AddressRe.MatchString(lib.Address.Hex()[2:]))
+	lib = lk.Libraries()["Adder"]
+	assert.True(t, util.AddressRe.MatchString(lib.Address.Hex()[2:]))
 }
 
 func TestLinkOne(t *testing.T) {
-    moduleDir := path.Join(cwd, "lib_math")
+	moduleDir := path.Join(cwd, "lib_math")
 
-    lk := linker.NewLinker(moduleDir)
-    bytecode, dErr := lk.Link(Add)
+	lk := newLinker(moduleDir)
+	bytecode, dErr := lk.Link(Add)
 
-    assert.NoError(t, dErr)
-    lib := lk.Libraries()["Adder"]
-    assert.True(t, util.AddressRe.MatchString(lib.Address))
-    addr := lib.Address[2:]
-    rep := strings.Replace(Add, AdderTag, addr, -1)
-    assert.Equal(t, rep, bytecode)
+	assert.NoError(t, dErr)
+	lib := lk.Libraries()["Adder"]
+	assert.True(t, util.AddressRe.MatchString(lib.Address.Hex()[2:]))
+	addr := lib.Address.Hex()[2:]
+	rep := strings.Replace(Add, AdderTag, addr, -1)
+	assert.Equal(t, rep, bytecode)
 }
 
 func TestLinkSeveral(t *testing.T) {
-    moduleDir := path.Join(cwd, "lib_math")
+	moduleDir := path.Join(cwd, "lib_math")
 
-    lk := linker.NewLinker(moduleDir)
-    bytecode, dErr := lk.Link(All)
+	lk := newLinker(moduleDir)
+	bytecode, dErr := lk.Link(All)
 
-    assert.NoError(t, dErr)
-    lib := lk.Libraries()["Adder"]
-    adderAddr := lib.Address[2:]
-    rep := strings.Replace(All, AdderTag, adderAddr, -1)
-    lib = lk.Libraries()["Subber"]
-    subberAddr := lib.Address[2:]
-    rep = strings.Replace(rep, SubberTag, subberAddr, -1)
-    lib = lk.Libraries()["AdderDelegator"]
-    adAddr := lib.Address[2:]
-    rep = strings.Replace(rep, AdderDelegatorTag, adAddr, -1)
-    assert.Equal(t, rep, bytecode)
+	assert.NoError(t, dErr)
+	lib := lk.Libraries()["Adder"]
+	adderAddr := lib.Address.Hex()[2:]
+	rep := strings.Replace(All, AdderTag, adderAddr, -1)
+	lib = lk.Libraries()["Subber"]
+	subberAddr := lib.Address.Hex()[2:]
+	rep = strings.Replace(rep, SubberTag, subberAddr, -1)
+	lib = lk.Libraries()["AdderDelegator"]
+	adAddr := lib.Address.Hex()[2:]
+	rep = strings.Replace(rep, AdderDelegatorTag, adAddr, -1)
+	assert.Equal(t, rep, bytecode)
 }
 
 func TestRunLib(t *testing.T) {
-    lk := linker.NewLinker("")
-    auth := lk.Auth()
-    backend := lk.Backend()
-
-    _, _, adder, err := DeployAdder(auth, backend)
-    assert.NoError(t, err)
-
-    backend.Commit()
-
-    addSum, addErr := adder.Add(nil, big.NewInt(10), big.NewInt(5))
-    assert.NoError(t, addErr)
-    assert.Equal(t, addSum, big.NewInt(15))
+	moduleDir := path.Join(cwd, "lib_math")
+	lk := newLinker(moduleDir)
+	lk.DeployLibrary("Adder")
+	vmenv := lk.Environment()
+	sender := lk.Sender()
+	libAddr := lk.Libraries()["Adder"].Address
+	dataStr := "771602f7" +
+		"0000000000000000000000000000000000000000000000000000000000000003" +
+		"0000000000000000000000000000000000000000000000000000000000000008"
+	data, _ := hex.DecodeString(dataStr)
+	ret, err := vmenv.Call(sender, libAddr, data, vmGas, vmPrice, vmValue)
+	assert.NoError(t, err)
+	retStr := hex.EncodeToString(ret)
+	assert.Equal(t, retStr, "000000000000000000000000000000000000000000000000000000000000000b")
 }
 
-
-// Doesn't work yet, but problem is identified and will be solved.
-// https://github.com/ethereum/go-ethereum/issues/2388
-
-/*
 func TestRunLinked(t *testing.T) {
-    cwd, err := os.Getwd()
-    assert.NoError(t, err)
-    moduleDir := path.Join(cwd, "lib_math")
-
-    lk := linker.NewLinker(moduleDir)
-    auth := lk.Auth()
-    backend := lk.Backend()
-    bytecode, dErr := lk.Link(AdderTesterBin)
-    assert.NoError(t, dErr)
-
-    var ret0 = new(*big.Int)
-    out := ret0
-    cErr := lk.Libraries()["Adder"].Contract.Call(nil, out, "add", big.NewInt(10), big.NewInt(5))
-    assert.NoError(t,cErr)
-    fmt.Println((*ret0).String())
-    parsed, jErr := abi.JSON(strings.NewReader(AdderTesterABI))
-    assert.NoError(t, jErr)
-    fmt.Println(bytecode)
-    _, _, contract, dcErr := bind.DeployContract(auth, parsed, common.FromHex(bytecode), backend)
-    assert.NoError(t, dcErr)
-
-    backend.Commit()
-    var ret1 = new(*big.Int)
-    out = ret1
-    c2Err := contract.Call(nil, out, "add")
-    assert.NoError(t, c2Err)
-
+	moduleDir := path.Join(cwd, "lib_math")
+	lk := newLinker(moduleDir)
+	lk.DeployLibrary("MathTester")
+	vmenv := lk.Environment()
+	sender := lk.Sender()
+	libAddr := lk.Libraries()["MathTester"].Address
+	dataStr := "771602f7" +
+		"0000000000000000000000000000000000000000000000000000000000000003" +
+		"0000000000000000000000000000000000000000000000000000000000000008"
+	data, _ := hex.DecodeString(dataStr)
+	ret, err := vmenv.Call(sender, libAddr, data, vmGas, vmPrice, vmValue)
+	assert.NoError(t, err)
+	retStr := hex.EncodeToString(ret)
+	assert.Equal(t, retStr, "000000000000000000000000000000000000000000000000000000000000000b")
 }
-*/

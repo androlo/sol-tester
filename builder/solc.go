@@ -27,13 +27,13 @@ func (this *Solc) solc(args []string, cwd string) error {
 	cmd.Stdout = &out
 	cmd.Stderr = &outErr
 	err := cmd.Run()
-    if out.Len() > 0 {
-        fmt.Printf("%s\n", out.String())
-    }
-    if outErr.Len() > 0 {
-        fmt.Printf("%s\n", outErr.String())
-        return fmt.Errorf("Error when running Solc: %s\n", outErr.String())
-    }
+	if out.Len() > 0 {
+		fmt.Printf("%s\n", out.String())
+	}
+	if outErr.Len() > 0 {
+		fmt.Printf("%s\n", outErr.String())
+		return fmt.Errorf("Error when running Solc: %s\n", outErr.String())
+	}
 	if err != nil {
 		return err
 	}
