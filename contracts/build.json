@@ -9,5 +9,8 @@
     "bin": true,
     "abi": true,
     "optimize": true
+  },
+  "includes": {
+    "sol-tester": "./src"
   }
 }

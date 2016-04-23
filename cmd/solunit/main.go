@@ -3,9 +3,6 @@ package main
 import (
 	"fmt"
 	"os"
-	"runtime"
-	"time"
-
 	"bytes"
 	"github.com/androlo/sol-tester/tester"
 	"github.com/codegangsta/cli"
@@ -167,33 +164,18 @@ func run(ctx *cli.Context) {
 	enableJit := ctx.GlobalBool(DisableJitFlag.Name)
 	callerAddress := ctx.GlobalString(CallerAddressFlag.Name)
 
-	testOptions := tester.NewTestOptions(gas, price, value, debug, forceJit, enableJit, callerAddress)
+	testOptions := tester.NewTestOptions(gas, price, value, debug, forceJit, enableJit, callerAddress, dir)
 
-	testRunner := tester.NewTestRunner(testContracts, testOptions, dir)
+	testRunner, trErr := tester.NewTestRunner(testContracts, testOptions)
+	if trErr != nil {
+		fmt.Println(trErr)
+		return
+	}
 	_, runErr := testRunner.Run()
 	if runErr != nil {
 		fmt.Println(runErr)
-		panic(runErr)
+		return
 	}
-
-	tstart := time.Now()
-
-	vmdone := time.Since(tstart)
-
-	if ctx.GlobalBool(SysStatFlag.Name) {
-		var mem runtime.MemStats
-		runtime.ReadMemStats(&mem)
-		fmt.Printf("vm took %v\n", vmdone)
-		fmt.Printf(`alloc:      %d
-tot alloc:  %d
-no. malloc: %d
-heap alloc: %d
-heap objs:  %d
-num gc:     %d
-`, mem.Alloc, mem.TotalAlloc, mem.Mallocs, mem.HeapAlloc, mem.HeapObjects, mem.NumGC)
-	}
-
-	fmt.Println()
 }
 
 func main() {

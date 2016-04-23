@@ -2,16 +2,11 @@ package tester
 
 import (
 	"github.com/ethereum/go-ethereum/accounts/abi"
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core/state"
-	"github.com/ethereum/go-ethereum/core/vm"
-	"github.com/ethereum/go-ethereum/ethdb"
 	// "fmt"
-	"encoding/hex"
-	"github.com/androlo/sol-tester/linker"
 	"github.com/fatih/color"
 	"math/big"
 	"strings"
+	"time"
 )
 
 func init() {
@@ -51,42 +46,26 @@ type TestData struct {
 	contractTestData map[string]*ContractTestData
 }
 
-type TestOptions struct {
-	gas           string
-	value         string
-	price         string
-	debug         bool
-	forcejit      bool
-	disablejit    bool
-	callerAddress string
-}
-
-func NewTestOptions(gas, value, price string, debug, forcejit, disablejit bool, callerAddress string) *TestOptions {
-	return &TestOptions{gas, value, price, debug, forcejit, disablejit, callerAddress}
-}
-
 type TestRunner struct {
+	envWrapper *EnvWrapper
 	testContracts []*TestContract
-	testOptions   *TestOptions
-	dir           string
 	testData      *TestData
-	statedb       *state.StateDB
-	sender        vm.Account
-	linker        *linker.Linker
 }
 
-func NewTestRunner(testContracts []*TestContract, testOptions *TestOptions, dir string) *TestRunner {
-	return &TestRunner{
-		testContracts: testContracts,
-		testOptions:   testOptions,
-		dir:           dir,
-		testData:      &TestData{make(map[string]*ContractTestData)},
+func NewTestRunner(testContracts []*TestContract, testOptions *TestOptions) (*TestRunner, error) {
+	ew, newErr := NewEnvWrapper(testOptions)
+	if newErr != nil {
+		return nil, newErr
 	}
+	return &TestRunner{
+		envWrapper: ew,
+		testContracts: testContracts,
+		testData:      &TestData{make(map[string]*ContractTestData)},
+	}, nil
 }
 
 func (self *TestRunner) Run() (*TestData, error) {
 	for i, _ := range self.testContracts {
-		self.init()
 		ctd := self.runTest(i)
 		// self.statedb.Commit()
 		// color.White("Dump:\n%s\n",string(self.statedb.Dump()))
@@ -111,49 +90,11 @@ func (self *TestRunner) Run() (*TestData, error) {
 	return self.testData, nil
 }
 
-func (self *TestRunner) init() error {
-	db, _ := ethdb.NewMemDatabase()
-	self.statedb, _ = state.New(common.Hash{}, db)
-
-	var callerAddr common.Address
-	if self.testOptions.callerAddress == "" {
-		callerAddr = common.StringToAddress("sender")
-	} else {
-		callerAddr = common.HexToAddress(self.testOptions.callerAddress)
-	}
-
-	self.sender = self.statedb.CreateAccount(callerAddr)
-
-	return nil
-}
-
-func (self *TestRunner) newVMEnv() *VMEnv {
-	return NewEnv(self.statedb, self.sender.Address(), common.Big(self.testOptions.value), vm.Config{
-		Debug:     self.testOptions.debug,
-		ForceJit:  self.testOptions.forcejit,
-		EnableJit: !self.testOptions.disablejit,
-	})
-}
-
 func (self *TestRunner) runTest(index int) (ctd *ContractTestData) {
 	ctd = &ContractTestData{}
 	testContract := self.testContracts[index]
 	self.testData.contractTestData[testContract.name] = ctd
-
-	vmenv := self.newVMEnv()
-	lk := linker.NewLinker(self.dir, vmenv, self.sender, common.Big(self.testOptions.gas))
-
-	linkedByteCode, linkErr := lk.Link(testContract.bytecode)
-	if linkErr != nil {
-		ctd.err = linkErr
-		return
-	}
-	bts, decErr := hex.DecodeString(linkedByteCode)
-	if decErr != nil {
-		ctd.err = decErr
-		return
-	}
-	_, addr, createErr := vmenv.Create(self.sender, bts, common.Big(self.testOptions.gas), common.Big(self.testOptions.price), common.Big(self.testOptions.value))
+	contract, _, createErr := self.envWrapper.DeployContract(testContract.bytecode)
 	if createErr != nil {
 		ctd.err = createErr
 		return
@@ -166,7 +107,6 @@ func (self *TestRunner) runTest(index int) (ctd *ContractTestData) {
 	methodDataArr := make(map[string]*MethodTestData)
 
 	for mName, method := range testMethods {
-		logIndex := len(vmenv.state.Logs())
 		methodData := &MethodTestData{true, make([]string, 0), make([]error, 0)}
 
 		// Only run methods that start with 'test'
@@ -180,22 +120,17 @@ func (self *TestRunner) runTest(index int) (ctd *ContractTestData) {
 
 		color.White("\nMethod: %s\n", mName)
 		// Call the function.
-		vmenv = self.newVMEnv()
-		_, cErr := vmenv.Call(
-			self.sender,
-			addr,
-			method.Id(),
-			common.Big(self.testOptions.gas),
-			common.Big(self.testOptions.price),
-			common.Big(self.testOptions.value),
-		)
+
+		pre := time.Now()
+		_, _, logs, cErr := contract.Run(method.Id(), nil)
+		tDur := time.Since(pre)
+
 		if cErr != nil {
 			methodData.success = false
 			methodData.errors = append(methodData.errors, cErr)
 		} else {
-			logs := vmenv.state.Logs()
-			if len(logs) > logIndex {
-				for i := logIndex; i < len(logs); i++ {
+			if len(logs) > 0 {
+				for i := 0; i < len(logs); i++ {
 
 					log := logs[i]
 					// fmt.Println(log.String())
@@ -224,8 +159,8 @@ func (self *TestRunner) runTest(index int) (ctd *ContractTestData) {
 
 				}
 			}
+			color.Yellow("Duration: %d (ms)", tDur / 1000000)
 		}
-
 		if methodData.success {
 			color.Green("SUCCESS\n")
 		} else {

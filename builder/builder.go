@@ -11,6 +11,7 @@ import (
 const BUILD_FILE_DEFAULT_NAME = "build.json"
 
 const SOURCE_DIR_DEFAULT_NAME = "src"
+const TEST_DIR_DEFAULT_NAME = "test"
 
 var outputDirDefaultName = path.Join("build", "release")
 
@@ -49,8 +50,9 @@ func (this *Builder) BuildFromBuildData(moduleRoot string, bd *BuildData) error 
 	}
 
 	commands := util.NewStrArr()
+	commands.Add("-i")
+	commands.Add("=.")
 	if bd.Includes != nil {
-		commands.Add("-i")
 		for k, v := range bd.Includes {
 			commands.Add(k + "=" + v)
 		}
@@ -70,7 +72,6 @@ func (this *Builder) BuildFromBuildData(moduleRoot string, bd *BuildData) error 
 	}
 
 	commands.Add("-o")
-
 	// Normal build
 	if bd.Units != nil && len(bd.Units) != 0 {
 		relCommands := *commands
@@ -90,18 +91,28 @@ func (this *Builder) BuildFromBuildData(moduleRoot string, bd *BuildData) error 
 	}
 	// Tests
 	if bd.Tests != nil && len(bd.Tests) != 0 {
+		var testDir string
+		if bd.CompilerOptions.TestPath == "" {
+			testDir = path.Join(moduleRoot, TEST_DIR_DEFAULT_NAME)
+		} else {
+			testDir = bd.CompilerOptions.TestPath
+		}
+		if bd.CompilerOptions.TestPath == "" {
+			bd.CompilerOptions.TestPath = path.Join(moduleRoot, TEST_DIR_DEFAULT_NAME)
+		}
 		var testBuildDir string
 		if bd.CompilerOptions.TestOutputPath == "" {
 			testBuildDir = path.Join(moduleRoot, testOutputDirDefaultName)
 		} else {
 			testBuildDir = bd.CompilerOptions.TestOutputPath
 		}
+
 		if bd.Tests != nil && len(bd.Tests) > 0 {
 			testCommands := *commands
 			testCommands = append(testCommands, testBuildDir)
 			for i := 0; i < len(bd.Tests); i++ {
 				test := bd.Tests[i]
-				tPath := path.Join(srcDir, test+".sol")
+				tPath := path.Join(testDir, test+".sol")
 				testCommands = append(testCommands, tPath)
 			}
 			tErr := this.solc.Compile(testCommands, moduleRoot)

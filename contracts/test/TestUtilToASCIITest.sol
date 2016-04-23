@@ -1,4 +1,4 @@
-import {Test} from "./Test.sol";
+import {Test} from "sol-tester/Test.sol";
 
 contract TestUtilToASCIITest is Test {
 

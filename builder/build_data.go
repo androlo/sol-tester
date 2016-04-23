@@ -16,6 +16,7 @@ type BuildData struct {
 
 type CompilerOptions struct {
 	SourcePath     string `json:"sourcePath"`
+	TestPath       string `json:"testPath"`
 	OutputPath     string `json:"outputPath"`
 	TestOutputPath string `json:"testOutputPath"`
 	Bin            bool   `json:"bin"`
