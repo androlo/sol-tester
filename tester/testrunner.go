@@ -9,17 +9,20 @@ import (
 	"time"
 )
 
+var hiYellow *color.Color
+
 func init() {
 	color.NoColor = false
+	hiYellow = color.New(color.FgHiYellow)
 }
 
-const TEST_EVENT_ID = "D204E27263771793B3472E4C07118500EB1AB892C2B2F0A4B90B33C33D4DF42F"
+const TEST_EVENT_ID = "0xd204e27263771793b3472e4c07118500eb1ab892c2b2f0a4b90b33c33d4df42f"
+
+const MESSAGE_ID = "0x51a7f65c6325882f237d4aeb43228179cfad48b868511d508e24b4437a819137"
 
 // const RUNTIME_EVENT_ID = ""
 
 // const STACK_EVENT_ID = ""
-
-// import "fmt"
 
 type TestContract struct {
 	name     string
@@ -131,11 +134,25 @@ func (self *TestRunner) runTest(index int) (ctd *ContractTestData) {
 		} else {
 			if len(logs) > 0 {
 				for i := 0; i < len(logs); i++ {
-
 					log := logs[i]
-					// fmt.Println(log.String())
 					topics := log.Topics
-					if len(topics) == 2 {
+					if topics == nil || len(topics) == 0 {
+						break;
+					}
+					eventId := log.Topics[0].Hex()
+					if eventId == MESSAGE_ID {
+						n := new(big.Int)
+						n.SetBytes(log.Data[32:64])
+						if n.Uint64() == 0 {
+							hiYellow.Printf("Message received: (empty)\n")
+						} else {
+							//fmt.Printf("Data-length: %d\n", len(log.Data))
+							//fmt.Printf("String length: %s\n", n.String())
+							msgLen := n.Uint64()
+							msg := string(log.Data[64 : 64+msgLen])
+							hiYellow.Printf("Message received: %s\n", msg)
+						}
+					} else if len(topics) == 2 && TEST_EVENT_ID == eventId{
 						eventId := strings.ToUpper(topics[0].Hex()[2:])
 						if eventId != TEST_EVENT_ID {
 							continue
