@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"path"
 	"strings"
+	"github.com/fatih/color"
 )
 
 var (
@@ -181,6 +182,7 @@ func run(ctx *cli.Context) {
 func main() {
 	if err := app.Run(os.Args); err != nil {
 		fmt.Fprintln(os.Stderr, err)
+		color.White("\n")
 		os.Exit(1)
 	}
 }

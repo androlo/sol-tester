@@ -5,7 +5,6 @@ import (
 	// "fmt"
 	"github.com/fatih/color"
 	"math/big"
-	"strings"
 	"time"
 )
 
@@ -152,9 +151,9 @@ func (self *TestRunner) runTest(index int) (ctd *ContractTestData) {
 							msg := string(log.Data[64 : 64+msgLen])
 							hiYellow.Printf("Message received: %s\n", msg)
 						}
-					} else if len(topics) == 2 && TEST_EVENT_ID == eventId{
-						eventId := strings.ToUpper(topics[0].Hex()[2:])
-						if eventId != TEST_EVENT_ID {
+					} else if TEST_EVENT_ID == eventId {
+						if len(log.Topics) != 2 {
+							// TODO
 							continue
 						}
 						res := topics[1].Big().Uint64() == 1
